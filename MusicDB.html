@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎵 MusicDB</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --accent: #c8a96e;
+    --accent2: #e8c98e;
+    --text: #f0ede8;
+    --text2: #9a9590;
+    --text3: #5a5550;
+    --green: #4a9e6e;
+    --amber: #c8962e;
+    --red: #9e4a4a;
+    --border: rgba(200,169,110,0.12);
+    --radius: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  /* Background grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    width: 100%;
+    max-width: 640px;
+    padding: 2rem 1.5rem 1rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 1;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  header span {
+    font-size: 0.75rem;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .counter {
+    font-size: 0.7rem;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+  }
+  .counter span { color: var(--accent); font-weight: 500; }
+
+  /* Config panel */
+  .config-panel {
+    width: 100%;
+    max-width: 640px;
+    padding: 0 1.5rem 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .config-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .config-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .config-body {
+    display: none;
+    margin-top: 1rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    gap: 0.75rem;
+    flex-direction: column;
+  }
+  .config-body.open { display: flex; }
+  .config-body label { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .config-body input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+    margin-top: 0.25rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .config-body input:focus { border-color: var(--accent); }
+  .config-save {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    align-self: flex-start;
+    transition: background 0.2s;
+  }
+  .config-save:hover { background: var(--accent2); }
+
+  /* Input area */
+  .input-area {
+    width: 100%;
+    max-width: 640px;
+    padding: 0 1.5rem 1.5rem;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 0.75rem;
+  }
+  .input-area input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.65rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-area input:focus { border-color: var(--accent); }
+  .input-area input::placeholder { color: var(--text3); }
+  .btn-search {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 12px;
+    padding: 0.65rem 1.25rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .btn-search:hover { background: var(--accent2); }
+  .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Card */
+  .card-wrap {
+    width: 100%;
+    max-width: 640px;
+    padding: 0 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: fadeUp 0.4s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card-hero {
+    display: flex;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    align-items: flex-start;
+  }
+  .card-cover {
+    width: 100px;
+    height: 100px;
+    border-radius: 10px;
+    background: var(--bg3);
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    border: 1px solid var(--border);
+  }
+  .card-cover img { width: 100%; height: 100%; object-fit: cover; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-artist {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 0.2rem;
+    font-weight: 500;
+  }
+  .card-album {
+    font-size: 0.78rem;
+    color: var(--text3);
+    margin-bottom: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .tag {
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+  .tag-genre { color: #8ab4e8; border-color: rgba(138,180,232,0.25); background: rgba(138,180,232,0.08); }
+  .tag-lang { color: var(--accent); border-color: rgba(200,169,110,0.25); background: rgba(200,169,110,0.08); }
+  .tag-energy { color: #8acea0; border-color: rgba(138,206,160,0.25); background: rgba(138,206,160,0.08); }
+
+  /* Duplicate warning */
+  .duplicate-warning {
+    margin: 0 1.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(200,150,46,0.1);
+    border: 1px solid rgba(200,150,46,0.3);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Listen bar */
+  .listen-bar {
+    padding: 0 1.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .listen-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 8px;
+    padding: 0.4rem 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .listen-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .listen-url { font-size: 0.72rem; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 0 1.5rem; }
+
+  /* Action buttons */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+  }
+  .action-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem 0.5rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    letter-spacing: 0.02em;
+  }
+  .action-btn:active { transform: scale(0.97); }
+  .action-btn .icon { font-size: 1.3rem; }
+  .btn-save { background: rgba(74,158,110,0.15); color: #6ec48e; border: 1px solid rgba(74,158,110,0.3); }
+  .btn-save:hover { background: rgba(74,158,110,0.25); }
+  .btn-watch { background: rgba(200,150,46,0.12); color: #c8962e; border: 1px solid rgba(200,150,46,0.25); }
+  .btn-watch:hover { background: rgba(200,150,46,0.22); }
+  .btn-skip { background: rgba(158,74,74,0.12); color: #c88888; border: 1px solid rgba(158,74,74,0.25); }
+  .btn-skip:hover { background: rgba(158,74,74,0.22); }
+  .action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Feedback toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.82rem;
+    color: var(--text);
+    z-index: 100;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(74,158,110,0.4); color: #6ec48e; }
+  .toast.error { border-color: rgba(158,74,74,0.4); color: #c88888; }
+  .toast.warn { border-color: rgba(200,150,46,0.4); color: var(--amber); }
+
+  /* Empty state */
+  .empty {
+    width: 100%;
+    max-width: 640px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+  .empty p { color: var(--text3); font-size: 0.88rem; line-height: 1.6; }
+
+  /* Loading */
+  .loading {
+    width: 100%;
+    max-width: 640px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 0.75rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { font-size: 0.8rem; color: var(--text3); }
+
+  /* History */
+  .history {
+    width: 100%;
+    max-width: 640px;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .history h3 {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 0.75rem;
+  }
+  .history-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.78rem;
+  }
+  .history-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-save { background: #6ec48e; }
+  .dot-watch { background: var(--amber); }
+  .dot-skip { background: #c88888; }
+  .history-name { flex: 1; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-action { font-size: 0.68rem; color: var(--text3); }
+
+  @media (max-width: 480px) {
+    header h1 { font-size: 1.2rem; }
+    .card-cover { width: 80px; height: 80px; }
+    .card-title { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MusicDB</h1>
+  <span>音樂收藏系統</span>
+  <div class="header-right">
+    <div class="counter">今日收藏 <span id="saveCount">0</span></div>
+  </div>
+</header>
+
+<!-- Security Warning -->
+<div style="width:100%;max-width:640px;padding:0 1.5rem 0.75rem;position:relative;z-index:1;">
+  <div style="background:rgba(200,150,46,0.08);border:1px solid rgba(200,150,46,0.25);border-radius:10px;padding:0.65rem 1rem;display:flex;gap:0.6rem;align-items:flex-start;">
+    <span style="font-size:0.9rem;flex-shrink:0;">⚠️</span>
+    <p style="font-size:0.72rem;color:#c8962e;line-height:1.6;">
+      <strong>安全提醒：</strong>此檔案內含你的個人 API 金鑰（Notion、Spotify、Last.fm）。請勿將此 HTML 檔案分享給他人、上傳至公開網路或存放於雲端公開空間。建議僅在自己的裝置上使用。
+    </p>
+  </div>
+</div>
+
+<!-- Config -->
+<div class="config-panel">
+  <button class="config-toggle" onclick="toggleConfig()">⚙ 設定 API</button>
+  <div class="config-body" id="configBody">
+    <div>
+      <label>Notion Token</label>
+      <input type="password" id="notionToken" placeholder="ntn_xxxxxxxx" />
+    </div>
+    <div>
+      <label>Last.fm API Key</label>
+      <input type="text" id="lastfmKey" placeholder="e0dd083e..." />
+    </div>
+    <div>
+      <label>Spotify Client ID</label>
+      <input type="text" id="spotifyId" placeholder="cf73ed4d..." />
+    </div>
+    <div>
+      <label>Spotify Client Secret</label>
+      <input type="password" id="spotifySecret" placeholder="32685436..." />
+    </div>
+    <button class="config-save" onclick="saveConfig()">儲存設定</button>
+  </div>
+</div>
+
+<!-- Input -->
+<div class="input-area">
+  <input type="text" id="artistInput" placeholder="歌手名稱" style="max-width:160px" />
+  <input type="text" id="trackInput" placeholder="歌曲名稱" />
+  <button class="btn-search" id="searchBtn" onclick="searchTrack()">查詢</button>
+</div>
+
+<!-- Card area -->
+<div class="card-wrap" id="cardWrap"></div>
+
+<!-- Empty state -->
+<div class="empty" id="emptyState">
+  <div class="empty-icon">🎵</div>
+  <p>輸入歌手和歌曲名稱開始查詢<br>或直接輸入歌曲名稱搜尋</p>
+</div>
+
+<!-- History -->
+<div class="history" id="historyWrap" style="display:none">
+  <h3>本次操作紀錄</h3>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────
+const DB_ID = '5404e064-0fc1-43e7-a8de-47aa2ce5ae4f';
+let cfg = {};
+let currentTrack = null;
+let saveCount = 0;
+let history = [];
+
+function loadConfig() {
+  try {
+    const s = localStorage.getItem('musicdb_cfg');
+    if (s) cfg = JSON.parse(s);
+    if (cfg.notionToken) document.getElementById('notionToken').value = cfg.notionToken;
+    if (cfg.lastfmKey) document.getElementById('lastfmKey').value = cfg.lastfmKey;
+    if (cfg.spotifyId) document.getElementById('spotifyId').value = cfg.spotifyId;
+    if (cfg.spotifySecret) document.getElementById('spotifySecret').value = cfg.spotifySecret;
+  } catch(e) {}
+}
+
+function saveConfig() {
+  cfg = {
+    notionToken: document.getElementById('notionToken').value.trim(),
+    lastfmKey: document.getElementById('lastfmKey').value.trim(),
+    spotifyId: document.getElementById('spotifyId').value.trim(),
+    spotifySecret: document.getElementById('spotifySecret').value.trim(),
+  };
+  localStorage.setItem('musicdb_cfg', JSON.stringify(cfg));
+  toggleConfig();
+  showToast('設定已儲存', 'success');
+}
+
+function toggleConfig() {
+  document.getElementById('configBody').classList.toggle('open');
+}
+
+// ── Toast ────────────────────────────────────────────────
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Energy level ─────────────────────────────────────────
+function energyLabel(e) {
+  if (e < 0.2) return '🔋1 極靜';
+  if (e < 0.4) return '🔋2 輕柔';
+  if (e < 0.6) return '🔋3 適中';
+  if (e < 0.8) return '🔋4 活躍';
+  return '🔋5 爆發';
+}
+
+// ── Spotify Token ─────────────────────────────────────────
+async function getSpotifyToken() {
+  if (!cfg.spotifyId || !cfg.spotifySecret) return null;
+  const creds = btoa(cfg.spotifyId + ':' + cfg.spotifySecret);
+  try {
+    const r = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + creds,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'grant_type=client_credentials'
+    });
+    const d = await r.json();
+    return d.access_token || null;
+  } catch(e) { return null; }
+}
+
+// ── Last.fm ───────────────────────────────────────────────
+async function getLastfmInfo(artist, track) {
+  if (!cfg.lastfmKey) return null;
+  try {
+    const url = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${cfg.lastfmKey}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}&format=json`;
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.track) return d.track;
+    return null;
+  } catch(e) { return null; }
+}
+
+// ── Spotify Search ────────────────────────────────────────
+async function searchSpotify(artist, track, token) {
+  if (!token) return null;
+  try {
+    const q = encodeURIComponent(artist + ' ' + track);
+    const r = await fetch(`https://api.spotify.com/v1/search?q=${q}&type=track&limit=1`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await r.json();
+    if (d.tracks && d.tracks.items.length > 0) return d.tracks.items[0];
+    return null;
+  } catch(e) { return null; }
+}
+
+async function getSpotifyFeatures(trackId, token) {
+  if (!token || !trackId) return null;
+  try {
+    const r = await fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+// ── Duplicate check ───────────────────────────────────────
+async function checkDuplicate(trackName, artist) {
+  if (!cfg.notionToken) return false;
+  try {
+    const r = await fetch(`https://api.notion.com/v1/databases/${DB_ID}/query`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.notionToken,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        filter: {
+          and: [
+            { property: '歌曲名稱', title: { equals: trackName } },
+            { property: '演出者', rich_text: { equals: artist } }
+          ]
+        },
+        page_size: 1
+      })
+    });
+    const d = await r.json();
+    return d.results && d.results.length > 0;
+  } catch(e) { return false; }
+}
+
+// ── Main search ───────────────────────────────────────────
+async function searchTrack() {
+  const artist = document.getElementById('artistInput').value.trim();
+  const track = document.getElementById('trackInput').value.trim();
+  if (!track) { showToast('請輸入歌曲名稱', 'error'); return; }
+
+  setLoading(true);
+  document.getElementById('emptyState').style.display = 'none';
+
+  try {
+    const [spotifyToken, lastfmData] = await Promise.all([
+      getSpotifyToken(),
+      getLastfmInfo(artist || track, track)
+    ]);
+
+    const spotifyTrack = await searchSpotify(artist || '', track, spotifyToken);
+    const features = spotifyTrack ? await getSpotifyFeatures(spotifyTrack.id, spotifyToken) : null;
+
+    // Merge data
+    const trackName = spotifyTrack ? spotifyTrack.name : (lastfmData ? lastfmData.name : track);
+    const artistName = spotifyTrack ? spotifyTrack.artists[0].name : (lastfmData ? lastfmData.artist?.name : artist);
+    const albumName = spotifyTrack ? spotifyTrack.album.name : (lastfmData?.album?.title || '');
+    const coverUrl = spotifyTrack ? spotifyTrack.album.images[0]?.url : (lastfmData?.album?.image?.find(i => i.size === 'large')?.['#text'] || '');
+    const isrc = spotifyTrack?.external_ids?.isrc || '';
+    const duration = spotifyTrack ? Math.round(spotifyTrack.duration_ms / 1000) : (lastfmData?.duration ? Math.round(parseInt(lastfmData.duration) / 1000) : 0);
+    const previewUrl = spotifyTrack?.preview_url || '';
+    const spotifyUrl = spotifyTrack?.external_urls?.spotify || '';
+
+    // Genres from Last.fm tags
+    const genres = [];
+    if (lastfmData?.toptags?.tag) {
+      const tagMap = {
+        'pop': '流行 Pop', 'rock': '搖滾 Rock', 'alternative': '另類搖滾 Alternative Rock',
+        'indie': '獨立 Indie', 'electronic': '電子 Electronic', 'dance': '舞曲 Dance',
+        'ambient': '氛圍 Ambient', 'jazz': '爵士 Jazz', 'blues': '藍調 Blues',
+        'soul': '靈魂樂 Soul', 'r&b': 'R&B', 'hip-hop': '嘻哈 Hip-Hop', 'hip hop': '嘻哈 Hip-Hop',
+        'classical': '古典 Classical', 'folk': '民謠 Folk', 'country': '鄉村 Country',
+        'metal': '金屬 Metal', 'punk': '龐克 Punk', 'bossa nova': 'Bossa Nova',
+        'new age': 'New Age', 'soundtrack': '配樂 OST', 'world': '世界音樂 World',
+        '流行': '流行 Pop', '搖滾': '搖滾 Rock', '電子': '電子 Electronic',
+        '爵士': '爵士 Jazz', '古典': '古典 Classical', '民謠': '民謠 Folk',
+        '嘻哈': '嘻哈 Hip-Hop', '國語': '流行 Pop'
+      };
+      const tags = Array.isArray(lastfmData.toptags.tag) ? lastfmData.toptags.tag : [lastfmData.toptags.tag];
+      tags.slice(0, 5).forEach(t => {
+        const key = t.name.toLowerCase();
+        if (tagMap[key] && !genres.includes(tagMap[key])) genres.push(tagMap[key]);
+      });
+    }
+
+    const energy = features ? energyLabel(features.energy) : '';
+    const isDup = await checkDuplicate(trackName, artistName);
+
+    currentTrack = { trackName, artistName, albumName, coverUrl, isrc, duration, previewUrl, spotifyUrl, genres, energy, isDuplicate: isDup };
+    renderCard(currentTrack);
+  } catch(e) {
+    showToast('查詢失敗，請檢查設定', 'error');
+    console.error(e);
+  }
+  setLoading(false);
+}
+
+// ── Render ────────────────────────────────────────────────
+function renderCard(t) {
+  const wrap = document.getElementById('cardWrap');
+  const dupHtml = t.isDuplicate ? `
+    <div class="duplicate-warning">
+      ⚠ 此歌曲可能已在資料庫中，請確認後再收藏
+    </div>` : '';
+
+  const tagsHtml = [
+    ...t.genres.slice(0, 3).map(g => `<span class="tag tag-genre">${g}</span>`),
+    t.energy ? `<span class="tag tag-energy">${t.energy}</span>` : ''
+  ].join('');
+
+  const listenHtml = (t.previewUrl || t.spotifyUrl) ? `
+    <div class="listen-bar">
+      ${t.previewUrl ? `<button class="listen-btn" onclick="playPreview('${t.previewUrl}')">▶ 試聽</button>` : ''}
+      ${t.spotifyUrl ? `<a href="${t.spotifyUrl}" target="_blank" class="listen-btn" style="text-decoration:none">↗ Spotify</a>` : ''}
+    </div>` : '';
+
+  wrap.innerHTML = `
+    ${dupHtml}
+    <div class="card">
+      <div class="card-hero">
+        <div class="card-cover">
+          ${t.coverUrl ? `<img src="${t.coverUrl}" alt="cover" onerror="this.style.display='none'">` : '🎵'}
+        </div>
+        <div class="card-info">
+          <div class="card-title">${t.trackName}</div>
+          <div class="card-artist">${t.artistName}</div>
+          <div class="card-album">${t.albumName}</div>
+          <div class="tags">${tagsHtml || '<span style="font-size:0.72rem;color:var(--text3)">無標籤資料</span>'}</div>
+        </div>
+      </div>
+      ${listenHtml}
+      <div class="divider"></div>
+      <div class="actions">
+        <button class="action-btn btn-save" id="btnSave" onclick="decide('save')">
+          <span class="icon">★</span>收藏
+        </button>
+        <button class="action-btn btn-watch" id="btnWatch" onclick="decide('watch')">
+          <span class="icon">⟳</span>再觀察
+        </button>
+        <button class="action-btn btn-skip" id="btnSkip" onclick="decide('skip')">
+          <span class="icon">✕</span>排除
+        </button>
+      </div>
+    </div>`;
+}
+
+let audioEl = null;
+function playPreview(url) {
+  if (audioEl) { audioEl.pause(); audioEl = null; }
+  audioEl = new Audio(url);
+  audioEl.play();
+}
+
+// ── Decision ──────────────────────────────────────────────
+async function decide(action) {
+  if (!currentTrack) return;
+  if (!cfg.notionToken) { showToast('請先設定 Notion Token', 'error'); return; }
+
+  ['btnSave','btnWatch','btnSkip'].forEach(id => document.getElementById(id).disabled = true);
+
+  const t = currentTrack;
+  const msgs = { save: '收藏成功 ★', watch: '已加入觀察清單', skip: '已排除' };
+  const types = { save: 'success', watch: 'warn', skip: '' };
+
+  // Only write to Notion for save and watch
+  if (action === 'save' || action === 'watch') {
+    try {
+      await writeToNotion(t, action);
+      showToast(msgs[action], types[action]);
+    } catch(e) {
+      showToast('寫入 Notion 失敗：' + e.message, 'error');
+      ['btnSave','btnWatch','btnSkip'].forEach(id => document.getElementById(id).disabled = false);
+      return;
+    }
+  } else {
+    showToast(msgs[action], types[action]);
+  }
+
+  // Update counter
+  if (action === 'save') {
+    saveCount++;
+    document.getElementById('saveCount').textContent = saveCount;
+  }
+
+  // Add to history
+  addHistory(t.trackName, t.artistName, action);
+
+  // Clear card after short delay
+  setTimeout(() => {
+    document.getElementById('cardWrap').innerHTML = '';
+    document.getElementById('emptyState').style.display = '';
+    currentTrack = null;
+    document.getElementById('trackInput').value = '';
+    document.getElementById('artistInput').value = '';
+    document.getElementById('trackInput').focus();
+  }, 1000);
+}
+
+// ── Write to Notion ───────────────────────────────────────
+async function writeToNotion(t, action) {
+  const properties = {
+    '歌曲名稱': { title: [{ text: { content: t.trackName } }] },
+    '演出者': { rich_text: [{ text: { content: t.artistName } }] },
+  };
+
+  if (t.albumName) properties['備註'] = { rich_text: [{ text: { content: '專輯：' + t.albumName } }] };
+  if (t.isrc) properties['ISRC'] = { rich_text: [{ text: { content: t.isrc } }] };
+  if (t.duration) properties['時長'] = { number: t.duration };
+  if (t.spotifyUrl) properties['連結'] = { url: t.spotifyUrl };
+
+  if (t.genres.length > 0) {
+    const validGenres = ['流行 Pop','搖滾 Rock','另類搖滾 Alternative Rock','獨立 Indie','電子 Electronic','舞曲 Dance','氛圍 Ambient','爵士 Jazz','藍調 Blues','靈魂樂 Soul','R&B','嘻哈 Hip-Hop','古典 Classical','民謠 Folk','鄉村 Country','金屬 Metal','龐克 Punk','Bossa Nova','New Age','配樂 OST','世界音樂 World','其他 Other'];
+    const filtered = t.genres.filter(g => validGenres.includes(g));
+    if (filtered.length > 0) properties['曲風'] = { multi_select: filtered.map(g => ({ name: g })) };
+  }
+
+  if (t.energy) properties['能量強度'] = { select: { name: t.energy } };
+
+  const r = await fetch('https://api.notion.com/v1/pages', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + cfg.notionToken,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      parent: { database_id: DB_ID },
+      cover: t.coverUrl ? { type: 'external', external: { url: t.coverUrl } } : undefined,
+      properties
+    })
+  });
+
+  if (!r.ok) {
+    const err = await r.json();
+    throw new Error(err.message || r.status);
+  }
+  return await r.json();
+}
+
+// ── History ───────────────────────────────────────────────
+function addHistory(name, artist, action) {
+  history.unshift({ name, artist, action });
+  if (history.length > 10) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const wrap = document.getElementById('historyWrap');
+  const list = document.getElementById('historyList');
+  if (history.length === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const labels = { save: '已收藏', watch: '再觀察', skip: '已排除' };
+  list.innerHTML = history.map(h => `
+    <div class="history-item">
+      <div class="history-dot dot-${h.action}"></div>
+      <div class="history-name">${h.name} — ${h.artist}</div>
+      <div class="history-action">${labels[h.action]}</div>
+    </div>`).join('');
+}
+
+// ── Loading ───────────────────────────────────────────────
+function setLoading(on) {
+  const wrap = document.getElementById('cardWrap');
+  document.getElementById('searchBtn').disabled = on;
+  if (on) wrap.innerHTML = `<div class="loading"><div class="spinner"></div><p>查詢中...</p></div>`;
+}
+
+// ── Enter key ─────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') searchTrack();
+});
+
+// ── Init ──────────────────────────────────────────────────
+loadConfig();
+
+// Pre-fill defaults if not yet saved
+if (!cfg.notionToken) {
+  cfg = {
+    notionToken: '',
+    lastfmKey: '',
+    spotifyId: '',
+    spotifySecret: '',
+  };
+  localStorage.setItem('musicdb_cfg', JSON.stringify(cfg));
+  document.getElementById('notionToken').value = cfg.notionToken;
+  document.getElementById('lastfmKey').value = cfg.lastfmKey;
+  document.getElementById('spotifyId').value = cfg.spotifyId;
+  document.getElementById('spotifySecret').value = cfg.spotifySecret;
+}
+</script>
+</body>
+</html>
